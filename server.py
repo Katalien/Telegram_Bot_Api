@@ -17,6 +17,7 @@ import message_manager
 from TasksTypes import *
 from datetime import datetime, timedelta
 import bot_answers
+import re
 
 def procces_repeat_period(data):
     if data["repeatable"] == "no_repeat":
@@ -102,6 +103,8 @@ def delete_periodical_task(data, user_id):
     if data["period"] == "yes_once":
         next_date = task.task_date + timedelta(minutes=task.repeat_min)
         db_manager.update_date(data['task_num'], user_id)
+        if task.notification_time != None:
+            db_manager.update_notification(data['task_num'], user_id)
     if data['period'] == "no_periodicaly":
         db_manager.delete_by_id(data['task_num'], user_id)
 
@@ -128,3 +131,27 @@ def find_task_with_attachments(task_id, user_id):
 
 def change_attachments_status(task_id, user_id):
     task = db_manager.change_attachments(task_id, user_id)
+
+def check_date(date):
+    pattern1 = re.compile(r'^\d{2}/\d{2}/\d{2}$')
+    pattern2 = re.compile(r'^\d{2}/\d{2}/\d{2} \d{2}:\d{2}$')
+    if re.match(pattern1, date):
+        date += ' 00:00'
+    if not re.match(pattern2, date) or re.match(pattern1, date):
+        return "Invalid date format.\n\n Correct formats:\n" \
+                               + message_manager.emoji_date + "dd/mm/yy\n" + message_manager.emoji_date + "dd/mm/yy hh:mm\n\nIf task has no date type -"
+    if int(date[:2]) > 31 or int(date[:2]) <= 0 or int(date[3:5]) > 12 or int(date[:2]) <= 0:
+        return "Invelid date. Try again or type - if you task have no date"
+    if len(date) > 8 and (int(date[9:11]) > 23 or int(date[12:14]) > 59 ):
+        return "Invelid time. Try again or type - if you task have no date"
+    datetime_object = datetime.strptime(date, '%d/%m/%y %H:%M')
+    if datetime_object < datetime.now() - timedelta(days=1):
+        return "You can't enter date from the past. Try again or type - if you task have no date"
+    return datetime_object
+
+def edit_date(id, new_date, user_id):
+    task = db_manager.find_by_id(id, user_id)
+    db_manager.edit_task_date_by_id(id, new_date)
+    if task.notification_time != None and new_date == None:
+        db_manager.delete_notification_by_id(id, user_id)
+        db_manager.delete_repetition_by_id(id, user_id)

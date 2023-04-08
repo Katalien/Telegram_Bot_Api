@@ -9,6 +9,18 @@ class TaskWithDate(StatesGroup):
     notification = State()
     attachments = State()
 
+class TaskEdit(StatesGroup):
+    action = State()
+    task_id= State()
+    period = State()
+    task_text = State()
+    task_date = State()
+    task_notification = State()
+    task_done = State()
+    task_attachments = State()
+    task_return_to_active = State()
+
+
 class Task(StatesGroup):
     task_text = State()
 

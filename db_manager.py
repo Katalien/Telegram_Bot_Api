@@ -82,8 +82,13 @@ def find_by_notification(date: str) -> List:
     return list(tasks)
 
 def find_by_id(id: int, user_id: int) -> object:
-    task = Task.get(Task.id == id, Task.user_id == user_id)
-    return task
+    try:
+        task = Task.get(id=id, user_id=user_id)
+        # If the instance exists, it will be returned here
+        return task
+    except Task.DoesNotExist:
+        # If the instance doesn't exist, a DoesNotExist exception will be raised
+        return None
 
 def edit_task_notification(id, new_notification):
     print(new_notification)
@@ -107,11 +112,28 @@ def edit_task_date_by_id(id, new_date):
     task.id = id
     task.save()
 
+def delete_notification_by_id(id, user_id):
+    task = Task(notification_time = None)
+    task.id = id
+    task.save
+
+def delete_repetition_by_id(id, user_id):
+    task = Task(repeat_min = None)
+    task.id = id
+    task.save()
+
 def update_date(id: int, user_id: int):
     task = find_by_id(id, user_id)
     old_date = task.task_date
     new_date = old_date + timedelta(minutes=task.repeat_min)
     task = Task.update(task_date=new_date).where(Task.id == id, Task.user_id == user_id)
+    task.execute()
+
+def update_notification(id: int, user_id: int):
+    task = find_by_id(id, user_id)
+    old_date = task.notification_time
+    new_date = old_date + timedelta(minutes=task.repeat_min)
+    task = Task.update(notification_time = new_date).where(Task.id == id, Task.user_id == user_id)
     task.execute()
 
 def make_task_active(id:int, user_id: int):

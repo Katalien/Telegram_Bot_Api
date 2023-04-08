@@ -21,6 +21,10 @@ import bot_answers
 from server import *
 
 
+# parse date in fedruary
+# edit date but do no edit notification date/ No error but it is missing ib a list of all tasks
+#
+
 TOKEN = "5870625403:AAHbyqr1XSX3P9U9W8-etfwvp-xKSU7loZk"
 MSG = "Hi there! I will help you remember everything you want"
 
@@ -29,67 +33,35 @@ storage = MemoryStorage()
 dp = Dispatcher(bot=bot, storage=storage)
 
 
-#
-# @dp.callback_query_handler(lambda c: c.data == 'edit_task')
-# async def edit_task(callback_query: types.CallbackQuery):
-#     await bot_answers.edit_callback_message(bot=bot,
-#                                          callback_query=callback_query,
-#                                          data=callback_query.message.text,
-#                                          markup=kb.inline_kb_edit2)
-#
-# @dp.callback_query_handler(lambda c: c.data == 'delete_task')
-# async def delete_task(message: types.Message):
-#     await message.answer("Type the number of task to del")
-#     await TaskToDel.task_num.set()
-#
-# @dp.message_handler(state=TaskToDel.task_num)
-# async def process_task_text(message: types.Message, state: FSMContext):
-#     num = message.text
-#     async with state.proxy() as data:
-#         data["num"] = num
-#     task = db_manager.delete_by_id(num)
-#     print(task)
-#     await bot.send_message(message.chat.id,  md.text(
-#             md.text("Deleted\nTask: ", md.text(task[0])),sep='\n',), ),
-#     await state.finish()
-#     await message.answer("Menu", reply_markup=kb.kb_start)
-#
-# #  Task with date
-# @dp.callback_query_handler(lambda c: c.data == 'new_task')
-# async def add_new_task_with_date(message: types.Message):
-#     await message.answer("Type your task")
-#     await TaskWithDate.task_text.set()
+@dp.message_handler(lambda message: message.text == "Add new task")
+async def add_new_task(message: types.Message):
+    await message.answer("Type your task\n\nIf you have changed your mind about creating a task, type -")
+    await TaskWithDate.task_text.set()
 
 @dp.message_handler(state=TaskWithDate.task_text)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def fill_new_task_text(message: types.Message, state: FSMContext):
     text = message.text.rstrip()
+    if text == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_start)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_text"] = text
-    await message.answer("Type date or - to skip")
+    await message.answer("Type date in one of the formats below\n\n" + message_manager.emoji_date + "dd/mm/yy\n" + message_manager.emoji_date + "dd/mm/yy mm:hh\n\nIf task has no date type -")
     await TaskWithDate.next()
 
 @dp.message_handler(state=TaskWithDate.date)
-async def process_task_with_date_text(message: types.Message, state: FSMContext):
+async def fill_new_task_date(message: types.Message, state: FSMContext):
     date = message.text
-    pattern1 = re.compile(r'^\d{2}/\d{2}/\d{2}$')
-    pattern2 = re.compile(r'^\d{2}/\d{2}/\d{2} \d{2}:\d{2}$')
     async with state.proxy() as data:
         if date == '-':
             data['date'] = None
         else:
-            if re.match(pattern1, date):
-                date += ' 00:00'
-            if not re.match(pattern2, date) or re.match(pattern1, date) :
-                await bot.send_message(message.from_user.id, "Invalid date.\n Correct formats:\n dd/mm/yy or dd/mm/yy hh:mm ")
-                return
-            datetime_object = datetime.strptime(date, '%d/%m/%y %H:%M')
-            print(datetime.now() + timedelta(days=1))
-            print(datetime_object)
-            if datetime_object < datetime.now() - timedelta(days=1):
-                await bot.send_message(message.from_user.id,
-                                       "You can't enter date from the past. Try again")
-                return
-            data["date"] = datetime_object
+            datetime_object = server.check_date(date)
+            if isinstance(datetime_object, str):
+                await bot.send_message(message.from_user.id, datetime_object)
+            else:
+                data["date"] = datetime_object
     if data["date"] != None:
         await message.answer("Repeat this task?", reply_markup=kb.repeat_kb)
         await TaskWithDate.next()
@@ -102,7 +74,6 @@ async def process_task_with_date_text(message: types.Message, state: FSMContext)
         await TaskWithDate.next()
         async with state.proxy() as data:
             data["notification"] = "no notify"
-        # add_task_to_db(message.from_user.id, data)
         await bot.send_message(chat_id=message.from_user.id, text="Attach files", reply_markup=kb.kb_no_attach)
         await TaskWithDate.attachments.set()
 
@@ -111,14 +82,14 @@ async def process_task_with_date_text(message: types.Message, state: FSMContext)
                             or callback_query.data == "week"
                             or callback_query.data == "month",
                            state=TaskWithDate.repeatable)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def fill_new_task_repetition(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
             data["repeatable"] = callback.data
-    await callback.answer("Type the period")
+    await bot.send_message(chat_id=callback.from_user.id, text="Type the period of repetition\n\ne.x. type '2' if you want to repeat it every 2 (hours/days/...) ")
     await TaskWithDate.next()
 
 @dp.message_handler(state=TaskWithDate.period)
-async def process_task_with_date_text(message: types.Message, state: FSMContext):
+async def fill_new_task_frequency_of_repetition(message: types.Message, state: FSMContext):
     period = message.text
     async with state.proxy() as data:
             data["period"] = period
@@ -126,7 +97,7 @@ async def process_task_with_date_text(message: types.Message, state: FSMContext)
     await TaskWithDate.next()
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data == "no_repeat", state=TaskWithDate.repeatable)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def process_new_task_repetition(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
             data["repeatable"] = "no_repeat"
     await TaskWithDate.next()
@@ -141,7 +112,7 @@ async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMC
                             or callback_query.data == "1 day"
                             or callback_query.data == "no notify",
                            state=TaskWithDate.notification)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def fill_new_task_notification(callback: types.CallbackQuery, state: FSMContext):
     notification = callback.data
     async with state.proxy() as data:
             data["notification"] = notification
@@ -149,8 +120,7 @@ async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMC
     await TaskWithDate.next()
 
 @dp.message_handler(state=TaskWithDate.attachments, content_types=types.ContentType.DOCUMENT)
-async def process_attach_message(message: types.Message, state: FSMContext):
-    file_dir = ''
+async def fill_new_task_attachments(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         file_dir = data['task_text']
     if len(file_dir) > 20:
@@ -168,7 +138,7 @@ async def process_attach_message(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=message.from_user.id, text="File was added. Add one more or click done.", reply_markup=kb.kb_done)
 
 @dp.message_handler(lambda message: message.text == "No attach", state=TaskWithDate.attachments)
-async def done_adding(callback: types.CallbackQuery, state: FSMContext):
+async def add_task_with_no_files(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["attachments"] = None
     server.add_task_to_db(callback.from_user.id, data)
@@ -176,7 +146,7 @@ async def done_adding(callback: types.CallbackQuery, state: FSMContext):
     await bot.send_message(chat_id=callback.from_user.id, text="Task was added", reply_markup=kb.kb_start)
 
 @dp.message_handler(lambda message: message.text == "That's all", state=TaskWithDate.attachments)
-async def done_adding(callback: types.CallbackQuery, state: FSMContext):
+async def process_addig_attachments(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         print(data)
     id = server.add_task_to_db(callback.from_user.id, data)
@@ -189,97 +159,112 @@ async def done_adding(callback: types.CallbackQuery, state: FSMContext):
 ##########
 
 @dp.message_handler(lambda message: message.text == "Back to menu")
-async def process_command_3(message: types.Message):
+async def back_to_menu(message: types.Message):
     await message.reply("Menu", reply_markup=kb.kb_start)
 
 # SHOW TASKS
 @dp.message_handler(lambda message: message.text == "Show tasks")
-async def process_command_2(message: types.Message):
+async def show_tasks_menu(message: types.Message):
     await bot.send_message(message.from_user.id, "Choose tasks to show", reply_markup=kb.kb_show)
 
 
 @dp.message_handler(lambda message: message.text == "Show all tasks")
-async def process_show_activ_tasks(message: types.Message):
+async def show_all_tasks(message: types.Message):
     tasks = server.find_active_tasks(message.from_user.id)
     mes_with_tasks = message_manager.all_tasks_message(tasks)
     print(mes_with_tasks)
     await message.reply(f"Tasks: {mes_with_tasks}", reply_markup=kb.kb_show)
 
 @dp.message_handler(lambda message: message.text == "Show completed tasks")
-async def process_show_activ_tasks(message: types.Message):
+async def show_completed_tasks(message: types.Message):
     tasks = server.find_completed_tasks(message.from_user.id)
     mes_with_tasks = message_manager.all_tasks_message(tasks)
     print(mes_with_tasks)
     await message.reply(f"Tasks: {mes_with_tasks}", reply_markup=kb.inline_kb_return)
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data == "return_to_active")
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("Type the number of the task")
+async def return_task_to_active(callback: types.CallbackQuery):
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text="Type the number of the task.\n\nIf you've changed your mind about returning task to active type -")
     await TaskReturnToActive.task_text.set()
 
 @dp.message_handler(state=TaskReturnToActive.task_text)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def fill_return_to_active_task_id(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_show)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_text"] = num
     db_manager.make_task_active(num, message.from_user.id)
     await state.finish()
-    await message.reply("Task is active again", reply_markup=kb.kb_start)
+    await message.reply("Task is active again", reply_markup=kb.kb_show)
 
 @dp.message_handler(lambda message: message.text == "Show periodical tasks")
-async def process_show_activ_tasks(message: types.Message):
+async def show_periodical_tasks(message: types.Message):
     tasks = server.find_periodical_tasks(message.from_user.id)
     mes_with_tasks = message_manager.all_tasks_message(tasks)
     await message.reply(f"Tasks: {mes_with_tasks}", reply_markup=kb.kb_show)
 
 @dp.message_handler(lambda message: message.text == "Show attachments")
-async def process_show_activ_tasks(message: types.Message):
+async def show_attachments_btn(message: types.Message):
     mes = message_manager.all_tasks_message(db_manager.fetchAll(message.from_user.id))
-    await bot.send_message(message.from_user.id, mes + "\n\nChose task")
+    await bot.send_message(message.from_user.id, mes + "\n\nChose task to show attachments.\n\nIf you don't want to see files type -")
     await TaskAttachment.task_num.set()
 
 @dp.message_handler(state=TaskAttachment.task_num)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def choose_task_to_show_attachments(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_show)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_num"] = num
-    task = server.find_task_with_attachments(num, message.from_user.id)
-    if task == None:
-        await bot.send_message(message.from_user.id, "No files", reply_markup=kb.kb_show)
-        await state.finish()
-        return
-    files_dir = server.get_file_dir(num, message.from_user.id)
-    await bot.send_message(message.from_user.id, message_manager.all_tasks_message(task))
-    if files_dir == None:
-        await bot.send_message(message.from_user.id, "No files")
-        await state.finish()
-        return
+    cur_task = db_manager.find_by_id(num, message.from_user.id)
+    if cur_task == None:
+        await bot.send_message(chat_id=message.from_user.id, text="No such task. Try again ot type - to cancel")
     else:
-        for file_name in os.listdir(files_dir):
-            file_path = os.path.join(files_dir, file_name)
-            with open(file_path, "rb") as file:
-                await bot.send_document(message.chat.id, file)
-    await state.finish()
-    await bot.send_message(message.from_user.id, "Here you are", reply_markup=kb.kb_show)
-
-@dp.message_handler(lambda message: message.text == "Add new task")
-async def process_command_4(message: types.Message):
-    await message.answer("Type your task")
-    await TaskWithDate.task_text.set()
+        task = server.find_task_with_attachments(num, message.from_user.id)
+        if task == None:
+            await bot.send_message(message.from_user.id, "No files", reply_markup=kb.kb_show)
+            await state.finish()
+            return
+        files_dir = server.get_file_dir(num, message.from_user.id)
+        await bot.send_message(message.from_user.id, message_manager.all_tasks_message(task))
+        if files_dir == None:
+            await bot.send_message(message.from_user.id, "No files")
+            await state.finish()
+            return
+        else:
+            for file_name in os.listdir(files_dir):
+                file_path = os.path.join(files_dir, file_name)
+                with open(file_path, "rb") as file:
+                    await bot.send_document(message.chat.id, file)
+        await state.finish()
+        await bot.send_message(message.from_user.id, "Here you are", reply_markup=kb.kb_show)
 
 # Delete task function
 @dp.message_handler(lambda message: message.text == "Delete task")
-async def process_command_4(message: types.Message):
+async def choose_task_to_delete(message: types.Message):
     mes = message_manager.all_tasks_message(db_manager.fetchAll(message.from_user.id))
-    await bot.send_message(message.from_user.id, mes + "\n\nChose task to delete")
+    await bot.send_message(message.from_user.id, mes + "\n\nChose task to delete\n\nIf you don't want to delete anything type -")
     await TaskToDel.task_num.set()
 
 @dp.message_handler(state=TaskToDel.task_num)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def delete_task(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_num"] = num
     task = db_manager.find_by_id(num, message.from_user.id)
+    if task == None:
+        await bot.send_message(message.from_user.id, "No such task. Try again or type - to cancel")
+        return
     if task.repeat_min != None:
         await message.reply( text="Task is periodical. Do you want to delete it once?", reply_markup=kb.inline_kb_yes_no)
         await TaskToDel.period.set()
@@ -292,7 +277,7 @@ async def process_task_text(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == "yes_once"
                                                   or callback_query.data == "no_periodicaly",
                                                   state=TaskToDel.period)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def delete_periodical_task(callback: types.CallbackQuery, state: FSMContext):
     period = callback.data
     async with state.proxy() as data:
         data["period"] = period
@@ -305,45 +290,59 @@ async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMC
 
 # Edit task functions
 @dp.message_handler(lambda message: message.text == "Edit task")
-async def process_command_4(message: types.Message):
+async def edit_task_menu(message: types.Message):
     mes = message_manager.all_tasks_message(server.find_active_tasks(message.from_user.id))
     await bot.send_message(message.from_user.id, mes + "\n\nChoose action to do", reply_markup=kb.kb_edit)
 
 @dp.message_handler(lambda message: message.text == "Make Done")
-async def process_command_4(message: types.Message):
-    await bot.send_message(message.from_user.id, "What task is completed?")
+async def choose_task_to_make_done(message: types.Message):
+    await bot.send_message(message.from_user.id, "What task is completed?\nIf you don't want to make any task completed type -")
     await TaskDone.task_text.set()
 
 @dp.message_handler(state=TaskDone.task_text)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def make_task_done(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_text"] = num
-
+    task = db_manager.find_by_id(num, message.from_user.id)
+    if task == None:
+        await bot.send_message(message.from_user.id, "No such task. Try again\n\nType - to cancel editing")
+        return
     local_time = str(datetime.now())[:-9] + "00"
     task = db_manager.make_completed( data["task_text"], local_time, message.from_user.id)
     await state.finish()
     await message.reply("Completed", reply_markup=kb.kb_edit)
 
 @dp.message_handler(lambda message: message.text == "Edit description")
-async def process_command_4(message: types.Message):
-    await bot.send_message(message.from_user.id, "What is the task to edit?")
+async def edit_decription_btn(message: types.Message):
+    await bot.send_message(message.from_user.id, "What is the task to edit?\n\nType - to cancel editing")
     await TaskEditText.task_num.set()
 
 #  edit task text
 @dp.message_handler(state=TaskEditText.task_num)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def choose_task_to_edit_description(message: types.Message, state: FSMContext):
     num = message.text
     async with state.proxy() as data:
         data["task_num"] = num
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
     task = db_manager.find_by_id(num, message.from_user.id)
+    if task == None:
+        await bot.send_message(message.from_user.id, "No such task. Try again or type - to cancel")
+        return
     mes = str(task.task_text) + "\n\n What is a new task text?"
     await message.answer(mes)
     await TaskEditText.next()
 
 
 @dp.message_handler(state=TaskEditText.task_text)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def edit_description(message: types.Message, state: FSMContext):
     text = message.text
     async with state.proxy() as data:
         data["task_text"] = text
@@ -364,7 +363,7 @@ async def process_task_text(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == "yes_once"
                             or callback_query.data == "no_periodicaly",
                             state=TaskEditText.period)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def periodical_task_edit_description(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["period"] = callback.data
     if callback.data == "yes_once":
@@ -377,20 +376,28 @@ async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMC
 
 #  Edit files
 @dp.message_handler(lambda message: message.text == "Add files")
-async def process_command_4(message: types.Message):
-    await bot.send_message(message.from_user.id, "Choose task to add files")
+async def add_files_btn(message: types.Message):
+    await bot.send_message(message.from_user.id, "Choose task to add files. \n Type - to cancel")
     await TaskAddFiles.task_num.set()
 
 @dp.message_handler(state=TaskAddFiles.task_num)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def choose_task_to_add_files(message: types.Message, state: FSMContext):
     num = message.text
     async with state.proxy() as data:
         data["task_num"] = num
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
+    task = db_manager.find_by_id(num, message.from_user.id)
+    if task == None:
+        await bot.send_message(message.from_user.id, "No such task. Try again\n\nType - to cancel editing")
+        return
     await bot.send_message(message.from_user.id, "Attach files or click done", reply_markup=kb.kb_done)
     await TaskAddFiles.next()
 
 @dp.message_handler(state=TaskAddFiles.attachments, content_types=types.ContentType.DOCUMENT)
-async def process_attach_message(message: types.Message, state: FSMContext):
+async def add_files_process(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         task_id = data['task_num']
     file_id = message.document.file_id
@@ -418,60 +425,67 @@ async def done_adding(callback: types.CallbackQuery, state: FSMContext):
 
 #  Edit date
 @dp.message_handler(lambda message: message.text == "Edit date")
-async def process_command_4(message: types.Message):
-    await bot.send_message(message.from_user.id, "What is the task to edit?")
+async def edit_date_btn(message: types.Message):
+    await bot.send_message(message.from_user.id, "What is the task to edit?\nType - to cancel editing")
     await TaskEditDate.task_num.set()
 
 @dp.message_handler(state=TaskEditDate.task_num)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def choose_task_to_edit_date(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_num"] = num
     task = db_manager.find_by_id(num, message.from_user.id)
-    mes = str(task.task_date) + "\n\nWhat is a new date? \n dd/mm/yy or dd/mm/yy hh/mm"
+    if task == None:
+        await bot.send_message(message.from_user.id, "No such task. Try again or type - to cancel editing")
+        return
+    task = db_manager.find_by_id(num, message.from_user.id)
+    mes = str(task.task_date) + "\n\nWhat is a new date?\n" + message_manager.emoji_date + "dd/mm/yy\n" + message_manager.emoji_date + "dd/mm/yy hh:mm\n\nIf task has no date type -"
     await message.answer(mes)
     await TaskEditDate.next()
 
 @dp.message_handler(state=TaskEditDate.task_date)
-async def process_task_text(message: types.Message, state: FSMContext):
+async def process_new_date(message: types.Message, state: FSMContext):
     date = message.text
-    pattern1 = re.compile(r'^\d{2}/\d{2}/\d{2}$')
-    pattern2 = re.compile(r'^\d{2}/\d{2}/\d{2} \d{2}:\d{2}$')
     async with state.proxy() as data:
         if date == '-':
             data['date'] = None
         else:
-            if re.match(pattern1, date):
-                date += ' 00:00'
-            if not re.match(pattern2, date) or re.match(pattern1, date):
-                await bot.send_message(message.from_user.id,
-                                       "Invalid date.\n Correct formats:\n dd/mm/yy or dd/mm/yy hh:mm ")
+            datetime_object = server.check_date(date)
+            if isinstance(datetime_object, str):
+                await bot.send_message(message.from_user.id, datetime_object)
                 return
-            datetime_object = datetime.strptime(date, '%d/%m/%y %H:%M')
-            print(datetime.now() + timedelta(days=1))
-            print(datetime_object)
-            if datetime_object < datetime.now() - timedelta(days=1):
-                await bot.send_message(message.from_user.id,
-                                       "You can't enter date from the past. Try again")
-                return
-            data["date"] = datetime_object
-    task = db_manager.edit_task_date_by_id(data["task_num"], datetime_object)
+            else:
+                data["date"] = datetime_object
+    server.edit_date(data["task_num"],  data["date"], message.from_user.id)
+    # task = db_manager.edit_task_date_by_id(data["task_num"],  data["date"])
     await state.finish()
     await message.reply("Done", reply_markup=kb.kb_edit)
 
 
 # Edit notification
 @dp.message_handler(lambda message: message.text == "Edit notification")
-async def process_command_4(message: types.Message):
-    await bot.send_message(message.from_user.id, "What is the task to edit?")
+async def edit_notification(message: types.Message):
+    await bot.send_message(message.from_user.id, "What is the task to edit?\nType - to cancel")
     await TaskEditNotificaion.task_num.set()
 
 @dp.message_handler(state=TaskEditNotificaion.task_num)
-async def process_notification_task(message: types.Message, state: FSMContext):
+async def choose_task_to_edit_notification(message: types.Message, state: FSMContext):
     num = message.text
+    if num == "-":
+        await bot.send_message(chat_id=message.from_user.id, text="Cancel", reply_markup=kb.kb_edit)
+        await state.finish()
+        return
     async with state.proxy() as data:
         data["task_num"] = num
     task = db_manager.find_by_id(num, message.from_user.id)
+    if task == None:
+        await bot.send_message(chat_id=message.from_user.id, text="No such task. Try again",
+                               reply_markup=kb.kb_edit)
+        return
     if task.task_date == None:
         await bot.send_message(chat_id=message.from_user.id, text="Task has no date. You can't add notification", reply_markup=kb.kb_edit)
         await state.finish()
@@ -481,7 +495,7 @@ async def process_notification_task(message: types.Message, state: FSMContext):
         mes += "No notification"
     else:
         mes = str(task.task_date) + "\n"
-        mes += message_manager.make_notification_from_task(task)
+        mes += message_manager.make_mes_notification_from_task(task)
     mes += "\n\n What is a new notification?"
     await message.answer(mes, reply_markup=kb.notification_kb)
     await TaskEditNotificaion.next()
@@ -493,7 +507,7 @@ async def process_notification_task(message: types.Message, state: FSMContext):
                             or callback_query.data == "1 day"
                             or callback_query.data == "no notify",
                            state=TaskEditNotificaion.notification)
-async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMContext):
+async def process_notification(callback: types.CallbackQuery, state: FSMContext):
     notification = callback.data
     async with state.proxy() as data:
             data["notification"] = notification
@@ -503,21 +517,9 @@ async def process_task_with_date_text(callback: types.CallbackQuery, state: FSMC
 
 
 @dp.message_handler(commands=['start'])
-async def process_command_1(message: types.Message):
-    await message.reply("Menu", reply_markup=kb.kb_start)
-
-async def handle_document_id(message: types.Message):
-    # Extract the document ID from the message
-    document_id = message.document.file_id
-
-    # Use the Telegram bot API's getFile method to get information about the document
-    file_info = await bot.get_file(document_id)
-
-    # Download the document file using the file path provided by the file info object
-    document_file = await bot.download_file(file_info.file_path)
-
-    # Send the document file back to the user
-    await bot.send_document(chat_id=message.chat.id, document=document_file)
+async def start_command(message: types.Message):
+    meet_message = "Hi there! I am RomKa and I will help you to remember everything. Have fun:)"
+    await message.reply(meet_message + "\n\nMenu", reply_markup=kb.kb_start)
 
 async def notify():
     local_time = str(datetime.now())[:-9] + "00"
