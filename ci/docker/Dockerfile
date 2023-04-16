@@ -4,26 +4,17 @@ FROM python:3.10-slim
 # Set work directory
 WORKDIR /usr/src/app
 
-#COPY pip.conf /etc/pip.conf
-#
-## Set environment variables
-#ENV PYTHONDONTWRITEBYTECODE 1
-#
-## Install dependencies
-#COPY pip.conf /etc/pip.conf
-#COPY Pipfile.lock Pipfile ./
-#
-#RUN pip install -U pip pipenv && pipenv install --system --deploy --ignore-pipfile --dev
+#Create folder for database
+RUN mkdir db
 
 # Copy project files
 COPY . .
 
-## Make entrypoint.sh executable
-#RUN chmod +x ./entrypoint.sh
+#Install dependencies
+RUN pip install -r requirements.txt
 
 # Publish network port
 EXPOSE 5000
 
 # Execute script to start the application web server
-#ENTRYPOINT ["./entrypoint.sh"]
 ENTRYPOINT python new_bot.py

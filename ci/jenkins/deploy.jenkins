@@ -1,0 +1,49 @@
+#!groovy
+// Run docker build
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent any
+//    triggers { pollSCM('* * * * *') }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
+        timestamps()
+    }
+    stages {
+//        stage("docker login") {
+//            steps {
+//                echo " ============== docker login =================="
+//                withCredentials([usernamePassword(credentialsId: 'dockerhub_semaev', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+//                    sh """
+//                    docker login -u $USERNAME -p $PASSWORD
+//                    """
+//                }
+//            }
+//        }
+         stage("docker version") {
+            steps {
+                echo " ============== docker version =================="
+                sh 'docker -v'
+            }
+        }
+        stage("create docker image") {
+            steps {
+                echo " ============== start building image =================="
+                dir ('docker-toolbox') {
+                	sh '''
+                    ls -a
+                    docker build -t toolbox:latest .
+                    '''
+                }
+            }
+        }
+        stage("docker run") {
+            steps {
+                echo " ============== start pushing image =================="
+                sh '''
+                docker run toolbox:latest
+                '''
+            }
+        }
+    }
+}

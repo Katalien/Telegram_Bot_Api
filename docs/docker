@@ -1,3 +1,24 @@
 docker build -t new_bot:latest -f .\ci\docker\Dockerfile .
 
-docker exec -it new_bot:latest bash
+docker run --name bot --detach new_bot:latest
+
+docker exec -it bot bash
+
+
+
+#2
+входим
+docker exec -it bot bash
+
+снимаем дамп
+sqlite3 ./db/database.db .dump > dump.sql
+
+tar -cvf backup.tar ./attachments
+tar -rvf backup.tar dump.sql
+gzip backup.tar
+rm dump.sql
+
+выходим
+exit
+docker cp bot:/usr/src/app/backup.tar.gz c:\temp
+
