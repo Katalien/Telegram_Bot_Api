@@ -29,9 +29,9 @@ pipeline {
         stage("create docker image") {
             steps {
                 echo " ============== start building image =================="
-                dir ('ci/docker/') {
+                {
                 	sh '''
-                    docker build -t new_bot:latest .
+                    docker build -t new_bot:latest -f .\ci\docker\Dockerfile .
                     '''
                 }
             }
