@@ -4,6 +4,10 @@ FROM python:3.10-slim
 # Set work directory
 WORKDIR /usr/src/app
 
+# Install sqlite3
+RUN apt-get -y update
+RUN apt-get -y upgrade
+RUN apt-get install -y sqlite3
 #Create folder for database
 RUN mkdir db
 

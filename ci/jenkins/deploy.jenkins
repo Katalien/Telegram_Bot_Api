@@ -29,10 +29,10 @@ pipeline {
         stage("create docker image") {
             steps {
                 echo " ============== start building image =================="
-                dir ('docker-toolbox') {
+                dir ('ci/docker/') {
                 	sh '''
                     ls -a
-                    docker build -t toolbox:latest .
+                    docker build -t new_bot:latest -f .\ci\docker\Dockerfile .
                     '''
                 }
             }
@@ -41,7 +41,7 @@ pipeline {
             steps {
                 echo " ============== start pushing image =================="
                 sh '''
-                docker run toolbox:latest
+                docker run --name bot --detach new_bot:latest
                 '''
             }
         }
