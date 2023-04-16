@@ -29,11 +29,9 @@ pipeline {
         stage("create docker image") {
             steps {
                 echo " ============== start building image =================="
-                {
-                	sh '''
-                    docker build -t new_bot:latest -f ./ci/docker/Dockerfile .
-                    '''
-                }
+                sh '''
+                docker build -t new_bot:latest -f ./ci/docker/Dockerfile .
+                '''
             }
         }
         stage("docker run") {
