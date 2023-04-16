@@ -40,22 +40,22 @@ pipeline {
                 sh '''
                 echo " ============== check bot container existing =================="
                 if docker ps | grep bot; then
-                echo " ============== container exist =================="
-                  docker create --volumes-from bot --name bot_tmp new_bot:latest
-                  docker stop bot
-                  docker start bot_tmp
+                  echo " ============== container exist ==================";
+                  docker create --volumes-from bot --name bot_tmp new_bot:latest;
+                  docker stop bot;
+                  docker start bot_tmp;
                   if docker ps | grep bot_tmp; then
-                    echo " ============== new container start success =================="
-                    docker rm bot
-                    docker rename bot_tmp bot
+                    echo " ============== new container start success ==================";
+                    docker rm bot;
+                    docker rename bot_tmp bot;
                   else
-                    echo " ============== restart old container =================="
-                    docker start bot
-                  fi
+                    echo " ============== restart old container ==================";
+                    docker start bot;
+                  fi;
                 else
-                  echo " ============== bot container does not exist =================="
-                  docker run --name bot --detach new_bot:latest
-                fi
+                  echo " ============== bot container does not exist ==================";
+                  docker run --name bot --detach new_bot:latest;
+                fi;
                 '''
             }
         }
