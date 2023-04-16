@@ -31,8 +31,7 @@ pipeline {
                 echo " ============== start building image =================="
                 dir ('ci/docker/') {
                 	sh '''
-                    ls -a
-                    docker build -t new_bot:latest -f .\ci\docker\Dockerfile .
+                    docker build -t new_bot:latest .
                     '''
                 }
             }
