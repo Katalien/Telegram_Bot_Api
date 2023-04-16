@@ -39,10 +39,10 @@ pipeline {
                 echo " ============== run bot container =================="
                 sh '''
                 echo " ============== check bot container existing =================="
-                if [docker create --volumes-from bot --name bot_tmp new_bot:latest] then
+                if [docker create --volumes-from bot --name bot_tmp new_bot:latest]; then
                 echo " ============== container exist =================="
                   docker stop bot
-                  if [docker start bot_tmp] then
+                  if [docker start bot_tmp]; then
                     echo " ============== new container start success =================="
                     docker rm bot
                     docker rename bot_tmp bot
