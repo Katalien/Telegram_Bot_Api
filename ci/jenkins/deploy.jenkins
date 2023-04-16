@@ -36,9 +36,24 @@ pipeline {
         }
         stage("docker run") {
             steps {
-                echo " ============== start pushing image =================="
+                echo " ============== run bot container =================="
                 sh '''
-                docker run --name bot --detach new_bot:latest
+                echo " ============== check bot container existing =================="
+                if [docker create --volumes-from bot --name bot_tmp new_bot:latest] then
+                echo " ============== container exist =================="
+                  docker stop bot
+                  if [docker start bot_tmp] then
+                    echo " ============== new container start success =================="
+                    docker rm bot
+                    docker rename bot_tmp bot
+                  else
+                    echo " ============== restart old container =================="
+                    docker start bot
+                  fi
+                else
+                  echo " ============== bot container does not exist =================="
+                  docker run --name bot --detach new_bot:latest
+                fi
                 '''
             }
         }
