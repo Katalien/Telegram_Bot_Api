@@ -1,22 +1,7 @@
-import asyncio
-import os
 import shutil
-import time
-import aioschedule
-import logging
-from aiogram import Bot, Dispatcher, executor, types
-import aiogram.utils.markdown as md
-from aiogram.types import update
-from aiogram.utils import callback_data
-from aiogram.utils.callback_data import CallbackData
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
 import db_manager
-import keyboard as kb
 import message_manager
-from TasksTypes import *
 from datetime import datetime, timedelta
-import bot_answers
 import re
 
 def procces_repeat_period(data):

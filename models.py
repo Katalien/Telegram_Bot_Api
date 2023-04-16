@@ -1,8 +1,4 @@
-import datetime
-import re
-from typing import List, NamedTuple, Optional
 from peewee import *
-import datetime
 
 db = SqliteDatabase('db/database.db')
 
