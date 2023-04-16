@@ -6,6 +6,7 @@ WORKDIR /usr/src/app
 # Copy project files
 COPY . .
 
+RUN ls -la
 #Install dependencies
 RUN pip install -r ./requirements.txt
 
