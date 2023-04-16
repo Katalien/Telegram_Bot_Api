@@ -1,5 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove, \
-    ReplyKeyboardMarkup, KeyboardButton, \
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, \
     InlineKeyboardMarkup, InlineKeyboardButton
 
 inline_btn_1 = InlineKeyboardButton('Первая кнопка!', callback_data='button1')

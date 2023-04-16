@@ -1,5 +1,4 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from datetime import datetime
 
 class TaskWithDate(StatesGroup):
     task_text = State()  # Will be represented in storage as 'Form:name'

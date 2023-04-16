@@ -1,8 +1,7 @@
-from typing import Union, Optional
-
+from typing import Union
 from aiogram import Bot
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, ReplyKeyboardMarkup, Message
-from aiogram.utils.exceptions import MessageNotModified
+
 
 async def send_forms_answer(bot: Bot,
                             message: Message,

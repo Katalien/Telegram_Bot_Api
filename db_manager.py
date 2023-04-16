@@ -1,6 +1,5 @@
-import datetime
 from models import *
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from datetime import datetime, timedelta
 
 with db:

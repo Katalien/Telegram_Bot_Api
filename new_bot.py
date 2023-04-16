@@ -1,29 +1,16 @@
 import asyncio
 import os
-import time
 import aioschedule
-import logging
 from aiogram import Bot, Dispatcher, executor, types
-import aiogram.utils.markdown as md
-from aiogram.types import update, ContentTypes
-from aiogram.utils import callback_data
-from aiogram.utils.callback_data import CallbackData
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-import db_manager
 import keyboard as kb
-import message_manager
 import server
-import re
 from TasksTypes import *
-from datetime import datetime, timedelta
-import bot_answers
 from server import *
 
 
-# parse date in fedruary
-# edit date but do no edit notification date/ No error but it is missing ib a list of all tasks
-#
+
 
 TOKEN = "5870625403:AAHbyqr1XSX3P9U9W8-etfwvp-xKSU7loZk"
 MSG = "Hi there! I will help you remember everything you want"
