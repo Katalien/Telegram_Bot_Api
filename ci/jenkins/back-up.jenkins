@@ -9,7 +9,7 @@ pipeline {
     }
     stages {
         stage("test") {
-            script {
+            steps {
                 sh '''
                 docker exec -i bot sh -c ‘ls -la’
                 '''
