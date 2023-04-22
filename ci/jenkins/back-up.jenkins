@@ -11,8 +11,10 @@ pipeline {
         stage("test") {
             steps {
                 script{
-                  def output = sh returnStdout: true, script: 'ls -la'
-                  println output
+                    docker.image('new_bot:latest').inside {
+                      def output = sh returnStdout: true, script: 'ls -la'
+                                        println output
+                    }
                 }
             }
         }
