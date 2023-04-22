@@ -9,9 +9,11 @@ pipeline {
     }
     stages {
         stage("test") {
-            sh '''
-            docker exec -i bot sh -c ‘ls -la’
-            '''
+            script {
+                sh '''
+                docker exec -i bot sh -c ‘ls -la’
+                '''
+            }
         }
         stage("create back_up") {
             steps {
