@@ -10,12 +10,7 @@ pipeline {
     stages {
         stage("test") {
             steps {
-                script{
-                    docker.container('bot').inside {
-                      def output = sh returnStdout: true, script: 'ls -la'
-                                        println output
-                    }
-                }
+                docker exec -i bot sh -c ‘ls -la’
             }
         }
         stage("create back_up") {
