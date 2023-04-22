@@ -13,6 +13,7 @@ pipeline {
                 echo " ============== start building image =================="
                 sh '''
                 docker exec -i --privileged bot bash
+                sqlite3 ./db/database.db .dump > dump.sql
                 tar -cvf backup.tar ./attachments
                 tar -rvf backup.tar dump.sql
                 gzip backup.tar
