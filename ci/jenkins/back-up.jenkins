@@ -1,0 +1,27 @@
+#!groovy
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent any
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
+        timestamps()
+    }
+    stages {
+        stage("create back_up") {
+            steps {
+                echo " ============== start building image =================="
+                sh '''
+                docker exec -it bot bash
+                sqlite3 ./db/database.db .dump > dump.sql
+                tar -cvf backup.tar ./attachments
+                tar -rvf backup.tar dump.sql
+                gzip backup.tar
+                rm dump.sql
+                exit
+                docker cp bot:/usr/src/app/backup.tar.gz c:\temp
+                '''
+            }
+        }
+    }
+}
