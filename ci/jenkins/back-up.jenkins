@@ -18,18 +18,22 @@ pipeline {
         }
         stage("create back_up") {
             steps {
-                echo " ============== start building image =================="
-                sh '''
-                docker exec -i --privileged bot bash
-                whoami > commandResult
-                ls -a > commandResult
-                tar -cvf backup.tar ./attachments
-                tar -rvf backup.tar dump.sql
-                gzip backup.tar
-                rm dump.sql
-                exit
-                docker cp bot:/usr/src/app/backup.tar.gz c:\temp
-                '''
+                echo " ============== back-up =================="
+
+                 script{
+                          def output = sh returnStdout: true, script: '''
+                                                                                      docker exec -i --privileged bot bash
+                                                                                      whoami
+                                                                                      ls -l
+                                                                                      tar -cvf backup.tar ./attachments
+                                                                                      tar -rvf backup.tar dump.sql
+                                                                                      gzip backup.tar
+                                                                                      rm dump.sql
+                                                                                      exit
+                                                                                      docker cp bot:/usr/src/app/backup.tar.gz c:\temp
+                                                                                      '''
+                          println output
+                        }
             }
         }
     }
