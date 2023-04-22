@@ -29,7 +29,6 @@ pipeline {
                 exit
                 docker cp bot:/usr/src/app/backup.tar.gz c:\temp
                 '''
-                result = readFile('commandResult').trim()
             }
         }
     }
