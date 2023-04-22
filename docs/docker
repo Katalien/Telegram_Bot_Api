@@ -24,5 +24,7 @@ docker run --name jenkins-blueocean --restart=on-failure --detach ^
   --volume jenkins-docker-certs:/certs/client:ro ^
   --publish 8090:8080 --publish 50000:50000 myjenkins-blueocean:2.387.2-1
 
+
+Проброс хука на локальный хост
 https://webhookrelay.com/blog/2017/11/23/github-jenkins-guide/
 relay forward --bucket github-jenkins http://localhost:8090/github-webhook/
