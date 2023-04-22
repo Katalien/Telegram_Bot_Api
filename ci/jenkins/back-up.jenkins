@@ -22,7 +22,7 @@ pipeline {
 
                  script{
                           def output = sh returnStdout: true, script: '''
-                                                                                      docker exec -i --privileged bot bash
+                                                                                      docker attach bot
                                                                                       whoami
                                                                                       ls -la
                                                                                       tar -cvf backup.tar ./attachments
