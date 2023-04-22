@@ -12,6 +12,11 @@ pipeline {
             steps {
                 sh '''
                 docker exec bot sh -c 'ls -la'
+                docker exec bot sh -c 'tar -cvf backup.tar ./attachments'
+                docker exec bot sh -c 'tar -rvf backup.tar dump.sql'
+                docker exec bot sh -c 'gzip backup.tar'
+                docker exec bot sh -c 'rm dump.sql'
+                docker exec bot sh -c 'gzip backup.tar'
                 '''
             }
         }
