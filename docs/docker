@@ -24,22 +24,5 @@ docker run --name jenkins-blueocean --restart=on-failure --detach ^
   --volume jenkins-docker-certs:/certs/client:ro ^
   --publish 8090:8080 --publish 50000:50000 myjenkins-blueocean:2.387.2-1
 
-
-
-
-#2
-входим
-docker exec -it bot bash
-
-снимаем дамп
-sqlite3 ./db/database.db .dump > dump.sql
-
-tar -cvf backup.tar ./attachments
-tar -rvf backup.tar dump.sql
-gzip backup.tar
-rm dump.sql
-
-выходим
-exit
-docker cp bot:/usr/src/app/backup.tar.gz c:\temp
-
+https://webhookrelay.com/blog/2017/11/23/github-jenkins-guide/
+relay forward --bucket github-jenkins http://localhost:8090/github-webhook/
