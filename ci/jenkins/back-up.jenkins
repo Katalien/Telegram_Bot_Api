@@ -8,37 +8,18 @@ pipeline {
         timestamps()
     }
     stages {
-        stage("test") {
+        stage("back-up") {
             steps {
+                echo " ============== create back-up =================="
                 sh '''
-                docker exec bot sh -c 'ls -la'
                 docker exec bot sh -c 'sqlite3 ./db/database.db .dump > dump.sql'
                 docker exec bot sh -c 'tar -cvf backup.tar ./attachments'
                 docker exec bot sh -c 'tar -rvf backup.tar dump.sql'
                 docker exec bot sh -c 'gzip backup.tar'
                 docker exec bot sh -c 'rm dump.sql'
-                docker cp bot:/usr/src/app/backup.tar.gz c:\\temp
+                docker cp bot:/usr/src/app/backup.tar.gz ./kate-temp
+                docker exec bot sh -c 'rm backup.tar.gz'
                 '''
-            }
-        }
-        stage("create back_up") {
-            steps {
-                echo " ============== back-up =================="
-
-                 script{
-                          def output = sh returnStdout: true, script: '''
-                                                                                      docker exec bot bash
-                                                                                      whoami
-                                                                                      ls -la
-                                                                                      tar -cvf backup.tar ./attachments
-                                                                                      tar -rvf backup.tar dump.sql
-                                                                                      gzip backup.tar
-                                                                                      rm dump.sql
-                                                                                      exit
-                                                                                      docker cp bot:/usr/src/app/backup.tar.gz c:\temp
-                                                                                      '''
-                          println output
-                        }
             }
         }
     }
