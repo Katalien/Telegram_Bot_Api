@@ -17,7 +17,7 @@ pipeline {
                 docker exec bot sh -c 'tar -rvf backup.tar dump.sql'
                 docker exec bot sh -c 'gzip backup.tar'
                 docker exec bot sh -c 'rm dump.sql'
-                docker exec bot sh -c 'gzip backup.tar'
+                docker cp bot:/usr/src/app/backup.tar.gz c:\temp
                 '''
             }
         }
