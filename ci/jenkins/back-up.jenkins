@@ -11,7 +11,7 @@ pipeline {
         stage("test") {
             steps {
                 script{
-                  def output = sh returnStdout: true, script: 'ls -l'
+                  def output = sh returnStdout: true, script: 'ls -la'
                   println output
                 }
             }
@@ -24,7 +24,7 @@ pipeline {
                           def output = sh returnStdout: true, script: '''
                                                                                       docker exec -i --privileged bot bash
                                                                                       whoami
-                                                                                      ls -l
+                                                                                      ls -la
                                                                                       tar -cvf backup.tar ./attachments
                                                                                       tar -rvf backup.tar dump.sql
                                                                                       gzip backup.tar
