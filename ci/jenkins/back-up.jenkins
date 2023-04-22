@@ -11,7 +11,7 @@ pipeline {
         stage("test") {
             steps {
                 sh '''
-                docker exec -i bot sh -c ‘ls -la’
+                docker exec bot sh -c 'ls -la'
                 '''
             }
         }
