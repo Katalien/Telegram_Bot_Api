@@ -10,11 +10,9 @@ pipeline {
     stages {
         stage("test") {
             steps {
-                echo " ============== start building image =================="
-                def output = sh returnStdout: true, script: 'ls -l'
-                echo " ============== start building image =================="
-                sh "ls -l > commandResult"
-                result = readFile('commandResult').trim()
+                script{
+                  def output = sh returnStdout: true, script: 'ls -l'
+                }
             }
         }
         stage("create back_up") {
