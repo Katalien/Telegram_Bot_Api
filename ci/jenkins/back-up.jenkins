@@ -8,7 +8,7 @@ pipeline {
         timestamps()
     }
     stages {
-        stage("create back_up") {
+        stage("test") {
                     steps {
                         echo " ============== start building image =================="
                         def output = sh returnStdout: true, script: 'ls -l'
