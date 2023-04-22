@@ -13,7 +13,8 @@ pipeline {
                 echo " ============== start building image =================="
                 sh '''
                 docker exec -i --privileged bot bash
-                echo $USER
+                echo whoami
+                echo ls -a
                 tar -cvf backup.tar ./attachments
                 tar -rvf backup.tar dump.sql
                 gzip backup.tar
