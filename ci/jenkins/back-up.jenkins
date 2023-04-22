@@ -12,6 +12,7 @@ pipeline {
             steps {
                 script{
                   def output = sh returnStdout: true, script: 'ls -l'
+                  println output
                 }
             }
         }
