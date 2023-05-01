@@ -10,7 +10,7 @@ from TasksTypes import *
 from server import *
 
 
-
+# check pipeline
 
 TOKEN = "5870625403:AAHbyqr1XSX3P9U9W8-etfwvp-xKSU7loZk"
 MSG = "Hi there! I will help you remember everything you want"
