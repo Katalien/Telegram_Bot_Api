@@ -16,6 +16,7 @@ RUN apt-get -y upgrade
 RUN apt-get install -y sqlite3
 #Create folder for database
 RUN mkdir db
+RUN mkdir attachments
 
 # Publish network port
 EXPOSE 5000
