@@ -4,7 +4,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, \
 inline_btn_1 = InlineKeyboardButton('Первая кнопка!', callback_data='button1')
 inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
 
-inline_btn_new_task = InlineKeyboardButton('Add new task', callback_data='new_task')
+inline_btn_new_task = InlineKeyboardButton('Add new task!!!!!', callback_data='new_task')
 inline_btn_show_all = InlineKeyboardButton('Show tasks', callback_data='show_tasks')
 inline_btn_delete_task = InlineKeyboardButton('Delete task', callback_data='delete_task')
 inline_btn_edit_task = InlineKeyboardButton('Edit task', callback_data='edit_task')
@@ -49,7 +49,7 @@ kb_done = ReplyKeyboardMarkup(row_width=3).add(btn_done )
 btn_no_attach = KeyboardButton("No attach", callback_data='no attach')
 kb_no_attach = ReplyKeyboardMarkup(row_width=3).add(btn_no_attach )
 
-btn_new_task = KeyboardButton('Add new task', callback_data='new_task')
+btn_new_task = KeyboardButton('Add new task!!!!!!', callback_data='new_task')
 btn_show_all = KeyboardButton('Show tasks')
 # btn_delete_task = KeyboardButton('Delete task', callback_data='delete_task')
 btn_edit_task = KeyboardButton('Edit task', callback_data='edit_task2')
